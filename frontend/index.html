@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Toxic Comment Detection System</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #273449;
+      --border: #334155;
+      --accent: #6366f1;
+      --accent-glow: rgba(99,102,241,0.25);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --orange: #f97316;
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.12);
+      --green-bg: rgba(34,197,94,0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 42px; height: 42px;
+      background: var(--accent);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header p  { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      background: var(--accent-glow);
+      border: 1px solid var(--accent);
+      color: #a5b4fc;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ---- LAYOUT ---- */
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      gap: 24px;
+    }
+
+    /* ---- CARD ---- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* ---- INPUT AREA ---- */
+    #commentInput {
+      width: 100%;
+      min-height: 130px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 14px 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    #commentInput:focus { border-color: var(--accent); }
+    #commentInput::placeholder { color: var(--muted); }
+
+    .char-counter {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .char-counter.warn { color: var(--orange); }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    #analyzeBtn {
+      flex: 1;
+      padding: 13px 20px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1rem;
+    }
+    #analyzeBtn:hover { background: #4f46e5; }
+    #analyzeBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #clearBtn {
+      padding: 13px 20px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    #clearBtn:hover { color: var(--text); background: var(--border); }
+
+    /* ---- SAMPLE BUTTONS ---- */
+    .samples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .sample-btn {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .sample-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ---- RESULT ---- */
+    #resultSection { display: none; }
+
+    .action-banner {
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .action-banner .icon { font-size: 2rem; }
+    .action-banner .label { font-size: 1.4rem; font-weight: 800; }
+    .action-banner .reason { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+    .action-ALLOW  { background: var(--green-bg);  border: 1px solid var(--green); }
+    .action-WARN   { background: rgba(234,179,8,.12); border: 1px solid var(--yellow); }
+    .action-FLAG   { background: rgba(249,115,22,.12); border: 1px solid var(--orange); }
+    .action-BLOCK  { background: var(--red-bg);   border: 1px solid var(--red); }
+
+    .action-ALLOW  .label { color: var(--green); }
+    .action-WARN   .label { color: var(--yellow); }
+    .action-FLAG   .label { color: var(--orange); }
+    .action-BLOCK  .label { color: var(--red); }
+
+    /* Scores grid */
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .score-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .score-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .score-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+    .score-bar-wrap {
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .score-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* Category breakdown */
+    .categories { display: grid; gap: 10px; }
+    .cat-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cat-name {
+      width: 160px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .cat-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .cat-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    .cat-pct {
+      width: 42px;
+      text-align: right;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* ---- STATS ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ---- LOADING ---- */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- ERROR ---- */
+    #errorMsg {
+      display: none;
+      background: var(--red-bg);
+      border: 1px solid var(--red);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--red);
+      font-size: 0.88rem;
+      margin-top: 12px;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .scores-grid { grid-template-columns: 1fr 1fr; }
+      header { flex-wrap: wrap; }
+      .badge { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🛡️</div>
+  <div>
+    <h1>Toxic Comment Detection System</h1>
+    <p>Summer Internship Project · Summer of AI (Swecha × IIIT Hyderabad)</p>
+  </div>
+  <span class="badge">BERT · FastAPI · PyTorch</span>
+</header>
+
+<main>
+
+  <!-- Input Card -->
+  <div class="card">
+    <div class="card-title">Analyze Comment</div>
+    <textarea id="commentInput" maxlength="5000"
+      placeholder="Type or paste a comment to analyze for toxicity..."></textarea>
+    <div class="char-counter"><span id="charCount">0</span> / 5000</div>
+
+    <div id="errorMsg">⚠️ <span id="errorText"></span></div>
+
+    <div class="btn-row">
+      <button id="analyzeBtn" onclick="analyzeComment()">🔍 Analyze Comment</button>
+      <button id="clearBtn" onclick="clearAll()">✕ Clear</button>
+    </div>
+
+    <div class="samples">
+      <span style="font-size:0.75rem;color:var(--muted);align-self:center">Try samples:</span>
+      <button class="sample-btn" onclick="setSample('I love how helpful this community is!')">✅ Positive</button>
+      <button class="sample-btn" onclick="setSample('You are the worst person I have ever seen online.')">⚠️ Mild toxic</button>
+      <button class="sample-btn" onclick="setSample('Go kill yourself you stupid idiot, nobody wants you here!')">🚫 Severe toxic</button>
+      <button class="sample-btn" onclick="setSample('This tutorial is a bit confusing but I will figure it out.')">💬 Neutral</button>
+    </div>
+  </div>
+
+  <!-- Result Section -->
+  <div id="resultSection">
+
+    <!-- Action Banner -->
+    <div id="actionBanner" class="action-banner">
+      <div class="icon" id="actionIcon"></div>
+      <div>
+        <div class="label" id="actionLabel"></div>
+        <div class="reason" id="actionReason"></div>
+      </div>
+    </div>
+
+    <!-- Score Cards -->
+    <div class="scores-grid">
+      <div class="score-card">
+        <div class="score-label">Toxicity Score</div>
+        <div class="score-value" id="toxicityScore">—</div>
+        <div class="score-bar-wrap"><div class="score-bar" id="toxicityBar"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Confidence</div>
+        <div class="score-value" id="confidenceScore">—</div>
+        <div class="score-bar-wrap"><div class="score-bar" id="confidenceBar" style="background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="card">
+      <div class="card-title">Category Breakdown</div>
+      <div class="categories" id="categoryRows"></div>
+    </div>
+
+  </div>
+
+  <!-- Session Stats -->
+  <div class="card" id="statsCard" style="display:none">
+    <div class="card-title">Session Statistics</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-lbl">Total Analyzed</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statToxic" style="color:var(--red)">0</div>
+        <div class="stat-lbl">Toxic Detected</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statRate" style="color:var(--orange)">0%</div>
+        <div class="stat-lbl">Toxic Rate</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Toxic Comment Detection System · Summer of AI · Swecha × IIIT Hyderabad<br>
+  Built with Python · FastAPI · BERT · HuggingFace Transformers · PyTorch
+</footer>
+
+<script>
+  const API = window.location.origin;
+
+  const CATEGORY_LABELS = {
+    toxic: "General Toxicity",
+    severe_toxic: "Severe Toxicity",
+    obscene: "Obscene Content",
+    threat: "Threatening Language",
+    insult: "Insulting Content",
+    identity_hate: "Identity-Based Hate",
+  };
+
+  const ACTION_META = {
+    ALLOW: { icon: "✅", color: "var(--green)" },
+    WARN:  { icon: "⚠️", color: "var(--yellow)" },
+    FLAG:  { icon: "🚩", color: "var(--orange)" },
+    BLOCK: { icon: "🚫", color: "var(--red)" },
+  };
+
+  // Char counter
+  document.getElementById("commentInput").addEventListener("input", function () {
+    const n = this.value.length;
+    const el = document.getElementById("charCount");
+    el.textContent = n;
+    el.parentElement.className = "char-counter" + (n > 4500 ? " warn" : "");
+  });
+
+  function setSample(text) {
+    document.getElementById("commentInput").value = text;
+    document.getElementById("charCount").textContent = text.length;
+  }
+
+  function clearAll() {
+    document.getElementById("commentInput").value = "";
+    document.getElementById("charCount").textContent = "0";
+    document.getElementById("resultSection").style.display = "none";
+    document.getElementById("errorMsg").style.display = "none";
+  }
+
+  function scoreColor(v) {
+    if (v >= 0.75) return "var(--red)";
+    if (v >= 0.50) return "var(--orange)";
+    if (v >= 0.25) return "var(--yellow)";
+    return "var(--green)";
+  }
+
+  async function analyzeComment() {
+    const text = document.getElementById("commentInput").value.trim();
+    if (!text) return;
+
+    const btn = document.getElementById("analyzeBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analyzing…';
+    document.getElementById("errorMsg").style.display = "none";
+    document.getElementById("resultSection").style.display = "none";
+
+    try {
+      const res = await fetch(`${API}/api/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Server error");
+      }
+
+      const data = await res.json();
+      renderResult(data);
+      loadStats();
+
+    } catch (e) {
+      document.getElementById("errorMsg").style.display = "block";
+      document.getElementById("errorText").textContent = e.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "🔍 Analyze Comment";
+    }
+  }
+
+  function renderResult(data) {
+    // Action banner
+    const meta = ACTION_META[data.action] || ACTION_META.ALLOW;
+    const banner = document.getElementById("actionBanner");
+    banner.className = `action-banner action-${data.action}`;
+    document.getElementById("actionIcon").textContent = meta.icon;
+    document.getElementById("actionLabel").textContent = data.action;
+    document.getElementById("actionReason").textContent = data.action_reason;
+
+    // Scores
+    const tPct = Math.round(data.toxicity_score * 100);
+    const cPct = Math.round(data.confidence * 100);
+    document.getElementById("toxicityScore").textContent = tPct + "%";
+    document.getElementById("toxicityScore").style.color = scoreColor(data.toxicity_score);
+    document.getElementById("toxicityBar").style.width = tPct + "%";
+    document.getElementById("toxicityBar").style.background = scoreColor(data.toxicity_score);
+
+    document.getElementById("confidenceScore").textContent = cPct + "%";
+    document.getElementById("confidenceBar").style.width = cPct + "%";
+
+    // Categories
+    const rows = document.getElementById("categoryRows");
+    rows.innerHTML = "";
+    for (const [key, val] of Object.entries(data.categories)) {
+      const pct = Math.round(val * 100);
+      const color = scoreColor(val);
+      rows.innerHTML += `
+        <div class="cat-row">
+          <div class="cat-name">${CATEGORY_LABELS[key] || key}</div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <div class="cat-pct" style="color:${color}">${pct}%</div>
+        </div>`;
+    }
+
+    document.getElementById("resultSection").style.display = "block";
+    document.getElementById("resultSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API}/api/stats`);
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById("statTotal").textContent = data.total_analyzed;
+      document.getElementById("statToxic").textContent = data.toxic_detected;
+      document.getElementById("statRate").textContent  = data.toxic_rate + "%";
+      document.getElementById("statsCard").style.display = "block";
+    } catch (_) {}
+  }
+
+  // Allow Ctrl+Enter to submit
+  document.getElementById("commentInput").addEventListener("keydown", function(e) {
+    if (e.ctrlKey && e.key === "Enter") analyzeComment();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
+models/bert-toxic-finetuned/
+data/*.csv
+*.log
+.pytest_cache/
+.idea/
+.vscode/settings.json

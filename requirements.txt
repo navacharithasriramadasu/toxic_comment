@@ -1,0 +1,23 @@
+# Toxic Comment Detection System - Dependencies
+# Summer Internship Project | Summer of AI
+
+# ── Core Framework ──────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.0
+python-multipart==0.0.12
+
+# ── ML & NLP ────────────────────────────────────────────────────
+torch>=2.0.0                # PyTorch (CPU build used by default)
+transformers>=4.40.0        # HuggingFace Transformers (BERT)
+scikit-learn>=1.4.0         # Evaluation metrics
+numpy>=1.26.0
+pandas>=2.0.0
+
+# ── NLP Preprocessing ───────────────────────────────────────────
+nltk==3.9.1
+
+# ── Dev / Testing ───────────────────────────────────────────────
+httpx==0.28.0               # async test client for FastAPI
+pytest==8.3.0
+pytest-asyncio==0.24.0
