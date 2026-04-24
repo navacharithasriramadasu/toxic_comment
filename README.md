@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🛡️ Toxic Comment Detection System
 
 **Summer Internship Project** — Summer of AI (Swecha × IIIT Hyderabad)  
@@ -204,3 +205,6 @@ Frontend displays result to user
 ---
 
 *Summer of AI · Swecha × IIIT Hyderabad*
+=======
+# toxic_comment
+>>>>>>> 98e39b2bab67251f92b062a7594d68b2fa88663e
